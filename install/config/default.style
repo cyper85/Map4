@@ -1,0 +1,158 @@
+# This is the style file that matches the old version of osm2pgsql, which
+# did not make distinctions between tags for nodes and for ways. There are a
+# number of optimisations that can be applied here. Firstly, certain tags
+# only apply to only nodes or only ways. By fixing this we reduce the amount
+# of useless data loaded into the DB, which is a good thing. Possible
+# optimisations for the future:
+
+# 1. Generate this file directly from the mapnik XML config, so it's always
+# optimal
+
+# 2. Extend it so it can understand that highway=tertiary is for ways and
+# highway=bus_stop is for nodes
+
+# Flags field isn't used much yet, expect if it contains the text "polygon"
+# it indicates the shape is candidate for the polygon table. In the future I
+# would like to be able to add directives like "nocache" which tells
+# osm2pgsql that it is unlikely this node will be used by a way and so it
+# doesn't need to be stored (eg coastline nodes). While in essence an
+# optimisation hack, for --slim mode it doesn't matter if you're wrong, but
+# in non-slim you might break something!
+
+# Also possibly an ignore flag, for things like "note" and "source" which
+# can simply be deleted. (In slim mode this is, does not apply to non-slim
+# obviously)
+
+# OsmType  Tag          DataType     Flags
+node,way   note         text         delete   # These tags can be long but are useless for rendering
+node,way   source       text         delete   # This indicates that we shouldn't store them
+node,way   created_by   text         delete
+
+node,way   access       text         linear
+node,way   addr:city           text  polygon
+node,way   addr:country        text  polygon
+node,way   addr:hamlet         text  polygon
+node,way   addr:housename      text  polygon
+node,way   addr:housenumber    text  polygon
+node,way   addr:interpolation  text  polygon
+node,way   addr:postcode       text  polygon
+node,way   addr:street         text  polygon
+node,way   addr:suburb         text  polygon
+node,way   addr:village        text  polygon
+node,way   admin_level  text         linear
+node,way   aerialway    text         linear
+node,way   aeroway      text         polygon
+node,way   amenity      text         nocache,polygon
+node,way   area         text         # hard coded support for area=1/yes => polygon is in osm2pgsql
+node,way   barrier      text         linear
+node,way   bicycle      text         nocache
+node,way   brand        text         linear
+node,way   bridge       text         linear
+node,way   boundary     text         polygon
+node,way   building     text         polygon
+node,way   building:level      text  polygon
+node,way   building:capacity   text  polygon
+node,way   capacity     text         linear
+node,way   club         text         polygon
+node,way   contact:email       text  polygon
+node,way   contact:facebook    text  polygon
+node,way   contact:fax         text  polygon
+node,way   contact:google_plus      text  polygon
+node,way   contact:linkedin    text  polygon
+node,way   contact:phone       text  polygon
+node,way   contact:twitter     text  polygon
+node,way   contact:webcam      text  polygon
+node,way   contact:website     text  polygon
+node,way   contact:xing        text  polygon
+node,way   covered      text         linear
+node,way   craft	text	     polygon
+node,way   cuisine      text         polygon
+node,way   cutting      text         linear
+node,way   dance:teaching      text  polygon
+node,way   denomination text         linear
+node,way   description         text  polygon
+node,way   disused      text         linear
+node       ele          text         linear
+node,way   email        text         polygon
+node,way   embankment   text         linear
+node,way   emergency    text         polygon
+node,way   facebook     text         polygon
+node,way   fax          text         polygon
+node,way   fee          text         polygon
+node,way   foot         text         linear
+node,way   google_plus  text         polygon
+node,way   healthcare   text         polygon
+node,way   healthcare:speciality  text         polygon
+node,way   highway      text         linear
+node,way   historic     text         polygon
+node,way   horse        text         linear
+node,way   image        text         polygon
+node,way   indoor       text         polygon
+node,way   information  text         polygon
+node,way   junction     text         linear
+node,way   landuse      text         polygon
+node,way   layer        text         linear
+node,way   leisure      text         polygon
+node,way   level        text         polygon
+node,way   linkedin     text         polygon
+node,way   lock         text         linear
+node,way   man_made     text         polygon
+node,way   military     text         polygon
+node,way   motorcar     text         linear
+node,way   name         text         polygon
+node,way   name:de      text         polygon
+node,way   name:en      text         polygon
+node,way   name:historic text 	     polygon
+node,way   name:old     text         polygon
+node,way   alt_name     text         polygon
+node,way   old_name     text         polygon
+node,way   hist_name    text         polygon
+node,way   int_name     text         polygon
+node,way   nat_name     text         polygon
+node,way   reg_name     text         polygon
+node,way   short_name   text         polygon
+node,way   official_name text        polygon
+node,way   natural      text         polygon  # natural=coastline tags are discarded by a hard coded rule in osm2pgsql
+node,way   office       text         polygon
+node,way   oneway       text         linear
+node,way   opening_hours text        polygon
+node,way   operator     text         polygon
+node,way   phone        text         polygon
+node       poi          text
+node,way   postal_code	text         polygon
+node,way   power        text         polygon
+node,way   power_source text         linear
+node,way   place        text         polygon
+node,way   railway      text         linear
+node,way   ref          text         polygon
+node,way   ref:old      text         polygon
+node,way   religion     text         nocache
+node,way   room         text         polygon
+node,way   route        text         linear
+node,way   service      text         linear
+node,way   shop         text         polygon
+node,way   social_facility      text    polygon
+node,way   social_facility:for  text    polygon
+node,way   sport        text         polygon
+node,way   surface      text         linear
+node,way   telephone    text         polygon
+node,way   toll         text         linear
+node,way   tourism      text         polygon
+way        tracktype    text         linear
+node,way   twitter      text         polygon
+node,way   tunnel       text         linear
+node,way   type         text         polygon
+node,way   url          text         polygon
+node,way   waterway     text         polygon
+node,way   website      text         polygon
+node,way   wetland      text         polygon
+node,way   wheelchair   text         polygon
+node,way   width        text         linear
+node,way   wikidata     text         polygon
+node,way   wikipedia    text         polygon
+node,way   wikipedia:de text         polygon
+node,way   wikipedia:en text         polygon
+node,way   wood         text         linear
+node,way   xing         text         polygon
+node,way   z_order      int4         linear 
+way        way_area     real                
