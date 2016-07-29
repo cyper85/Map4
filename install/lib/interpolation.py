@@ -54,18 +54,16 @@ cursor.execute("SELECT * FROM planet_osm_rels")
 row = cursor.fetchone()
 
 while row:
-    print row['tags']
     rel_tags = {}
     while len(row['tags'])>0:
         val = row['tags'].pop()
         key = row['tags'].pop()
         if(key in styledata):
             rel_tags[key] = val
+    print rel_tags["type"]
+    print row['members'][0]
     if (rel_tags["type"] == "site"):
         polygons = []
         rel_member = []
-        print 
     row = cursor.fetchone()
 
-if __name__ == "__main__":
-    print "Hello World"
