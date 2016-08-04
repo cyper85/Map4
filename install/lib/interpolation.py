@@ -31,24 +31,163 @@ styledata = filter(None, styledata)
 db = psycopg2.connect("dbname=map4 user=map4")
 cursor = db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 cursor2 = db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
+cursor3 = db.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
 def generateBuildingPolygon(way_id,polygons):
     """Erzeugt Polygone"""
-    cursor.execute("SELECT * FROM planet_osm_ways WHERE id = "+way_id)
-    row = cursor.fetchone()
-    while row:
+    cursor3.execute("SELECT * FROM planet_osm_ways WHERE id = "+way_id)
+    row3 = cursor3.fetchone()
+    while row3:
         # Teste auf Polygon
-        if(row['nodes'][0] == row['nodes'][len(row['nodes'])-1]):
+        if(row3['nodes'][0] == row3['nodes'][len(row3['nodes'])-1]):
             polygon = []
-            for node in row['nodes']:
+            for node in row3['nodes']:
                 cursor2.execute("SELECT * FROM planet_osm_nodes WHERE id = "+str(node))
                 node_row = cursor2.fetchone()
                 while node_row:
                     polygon.append(str(node_row["lon"]/10000000.0)+" "+str(node_row["lat"]/10000000.0))
                     node_row = cursor2.fetchone()
             polygons.append("("+",".join(polygon)+")")
-        row = cursor.fetchone()
+        row3 = cursor3.fetchone()
     return polygons
+
+def is_inter_point(nr, inter):
+    if((inter=='all') and re.match(r'^\d+$',nr)):
+        return 1
+    elif((inter=='even') and re.match(r'^\d+$',nr) and (nr % 2 == 0)):
+        return 1
+    elif((inter=='odd') and re.match(r'^\d+$',nr) and (nr % 2 == 1)):
+        return 1
+    elif((inter=='alphabetic') and re.match(r'^\s*\d+\s*[a-zA-Z]\s*$',nr)):
+        return 1
+    else:
+        return 0
+
+def interpol(start,end,line,intertype):
+    new = []
+    if(intertype=='all'):
+	if(start['housenumber'] > end['housenumber']):
+            anzahl = start['housenumber'] - end['housenumber']
+            anzahl1 = anzahl
+            i=1;
+            for(anzahl;anzahl>1;anzahl--):
+		cursor3.execude("INSERT INTO planet_osm_point (\"addr:housenumber\", \"addr:street\", \"addr:suburb\", \"addr:city\", \"addr:postcode\", way) VALUES (%s,%s,%s,%s,%s,ST_Line_Interpolate_Point(st_linefromtext(%s,4326),%s)),"
+                    ,(str(start['housenumber']+i), start['street'], start['suburb'], start['city'], start['postcode'], 'LINESTRING('+','.join(line)+')',str($i/$anzahl1)))
+		i++
+        else:
+            anzahl = end['housenumber'] - start['housenumber'];
+            anzahl1 = anzahl;
+            i=1;
+            for(anzahl;anzahl>1;anzahl--):
+		cursor3.execude("INSERT INTO planet_osm_point (\"addr:housenumber\", \"addr:street\", \"addr:suburb\", \"addr:city\", \"addr:postcode\", way) VALUES (%s,%s,%s,%s,%s,ST_Line_Interpolate_Point(st_linefromtext(%s,4326),%s)),"
+                    ,(str(start['housenumber']+i), start['street'], start['suburb'], start['city'], start['postcode'], 'LINESTRING('+','.join(line)+')',str($i/$anzahl1)))
+		i++
+    elif((intertype=='even') or (intertype=='odd')) {
+	if($start['housenumber']>$end['housenumber']) {
+				$anzahl = ($start['housenumber'] - $end['housenumber'])/2;
+				$anzahl1 = $anzahl;
+				$i=1;
+				for($anzahl;$anzahl>1;$anzahl--) {
+					$query = "INSERT INTO planet_osm_point (\"addr:housenumber\", \"addr:street\", \"addr:suburb\", \"addr:city\", \"addr:postcode\", way) VALUES ('".
+					($start['housenumber']-($i*2))."','".
+					$start['street']."','".
+					$start['suburb']."','".
+					$start['city']."','".
+					$start['postcode']."',".
+					"ST_Line_Interpolate_Point(st_linefromtext('LINESTRING(".implode(',',$line).")',4326),".$i/$anzahl1."))"; 
+					pg_query($query);
+					$i++;
+				}
+			}
+			else {
+				$anzahl = ($end['housenumber'] - $start['housenumber'])/2;
+				$anzahl1 = $anzahl;
+				$i=1;
+				for($anzahl;$anzahl>1;$anzahl--) {
+					$query = "INSERT INTO planet_osm_point (\"addr:housenumber\", \"addr:street\", \"addr:suburb\", \"addr:city\", \"addr:postcode\", way) VALUES ('".
+					($start['housenumber']+($i*2))."','".
+					$start['street']."','".
+					$start['suburb']."','".
+					$start['city']."','".
+					$start['postcode']."',".
+					"ST_Line_Interpolate_Point(st_linefromtext('LINESTRING(".implode(',',$line).")',4326),".$i/$anzahl1."))"; 
+					pg_query($query);
+					$i++;
+				}
+			}
+		}
+		elseif($intertype=='alphabetic') {
+			$number = array(
+				1 => 'a',
+				2 => 'b',
+				3 => 'c',
+				4 => 'd',
+				5 => 'e',
+				6 => 'f',
+				7 => 'g',
+				8 => 'h',
+				9 => 'i',
+				10 => 'j',
+				11 => 'k',
+				12 => 'l',
+				13 => 'm',
+				14 => 'n',
+				16 => 'o',
+				17 => 'p',
+				18 => 'q',
+				19 => 'r',
+				20 => 's',
+				21 => 't',
+				22 => 'v',
+				23 => 'w',
+				24 => 'x',
+				25 => 'y',
+				26 => 'z'
+				); // 
+			$alpha = array_flip($number);
+			preg_match('/([a-zA-Z])/',$start['housenumber'],$match_start);
+			preg_match('/([a-zA-Z])/',$end['housenumber'],$match_end);
+			preg_match('/([0-9]*)/',$start['housenumber'],$match_start_nr);
+			preg_match('/([0-9]*)/',$end['housenumber'],$match_end_nr);
+			if($match_end_nr[1]==$match_start_nr[1]) {
+				$anzahl = $alpha[strtolower($match_start[1])]-$alpha[strtolower($match_end[1])];
+				if($alpha[strtolower($match_start[1])]>$alpha[strtolower($match_end[1])]) {
+					$anzahl = $alpha[strtolower($match_start[1])]-$alpha[strtolower($match_end[1])];
+					$anzahl1 = $anzahl;
+					$i=1;
+					for($anzahl;$anzahl>1;$anzahl--) {
+						$query = "INSERT INTO planet_osm_point (\"addr:housenumber\", \"addr:street\", \"addr:suburb\", \"addr:city\", \"addr:postcode\", way) VALUES ('".
+						($match_start_nr[1].$number[$alpha[strtolower($match_start[1])]-$i])."','".
+						$start['street']."','".
+						$start['suburb']."','".
+						$start['city']."','".
+						$start['postcode']."',".
+						"ST_Line_Interpolate_Point(st_linefromtext('LINESTRING(".implode(',',$line).")',4326),".$i/$anzahl1."))"; 
+						pg_query($query);
+						$i++;
+					}
+				}
+				else {
+					$anzahl = $alpha[strtolower($match_end[1])]-$alpha[strtolower($match_start[1])];
+					$anzahl1 = $anzahl;
+					$i=1;
+					for($anzahl;$anzahl>1;$anzahl--) {
+						$query = "INSERT INTO planet_osm_point (\"addr:housenumber\", \"addr:street\", \"addr:suburb\", \"addr:city\", \"addr:postcode\", way) VALUES ('".
+						($match_start_nr[1].$number[$alpha[strtolower($match_start[1])]+$i])."','".
+						$start['street']."','".
+						$start['suburb']."','".
+						$start['city']."','".
+						$start['postcode']."',".
+						"ST_Line_Interpolate_Point(st_linefromtext('LINESTRING(".implode(',',$line).")',4326),".$i/$anzahl1."))"; 
+						pg_query($query);
+						$i++;
+					}
+				}
+				
+			}
+			//exit;
+		}
+	}
 
 cursor.execute("SELECT * FROM planet_osm_rels")
 
@@ -86,9 +225,7 @@ while row:
             vals.append("0")
             vals_s += "ST_GeomFromText(%s,4326), %s, %s, %s"
             
-            cursor.execute('INSERT INTO "planet_osm_polygon" ('+cols+') VALUES ('+vals_s+')',vals)
-            print cursor.query
-            print psycopg2.Error.diag.message_primary+"\n"
+            cursor2.execute('INSERT INTO "planet_osm_polygon" ('+cols+') VALUES ('+vals_s+')',vals)
     if (rel_tags["type"] == "building"):
         polygons = []
         for (member_id, member_type) in rel_member.items():
@@ -109,7 +246,7 @@ while row:
             vals.append("0")
             vals_s += "ST_GeomFromText(%s,4326), %s, %s, %s"
             
-            cursor.execute('INSERT INTO "planet_osm_polygon" ('+cols+') VALUES ('+vals_s+')',vals)
+            cursor2.execute('INSERT INTO "planet_osm_polygon" ('+cols+') VALUES ('+vals_s+')',vals)
     row = cursor.fetchone()
 
 # Fehlende Straßennamen ergänzen
@@ -119,7 +256,7 @@ while row:
     cursor2.execute("SELECT name FROM planet_osm_roads WHERE ST_DWithin(way,ST_GeomFromText(%s,4326), 200) AND name != '' AND highway IN  ('residential','living_street','primary','secondary','tertiary','unclassified','road','service','pedestrian') ORDER BY ST_distance(way, ST_GeomFromText(%s,4326)) limit 1;",(row['way'],row['way']))
     row2 = cursor2.fetchone()
     if row2:
-        cursor2.execute('UPDATE planet_osm_point SET "addr:street" = %s WHERE "osm_id" = %s',(row2['name'],row['id']))
+        cursor3.execute('UPDATE planet_osm_point SET "addr:street" = %s WHERE "osm_id" = %s',(row2['name'],row['id']))
     row = cursor.fetchone()
 
 cursor.execute("select st_astext(way) as way, osm_id as id from planet_osm_line where \"addr:street\" IS NULL AND (\"addr:housenumber\" IS NOT NULL OR \"addr:housename\" IS NOT NULL)");
@@ -128,7 +265,7 @@ while row:
     cursor2.execute("SELECT name FROM planet_osm_roads WHERE ST_DWithin(way,ST_GeomFromText(%s,4326), 200) AND name != '' AND highway IN  ('residential','living_street','primary','secondary','tertiary','unclassified','road','service','pedestrian') ORDER BY ST_distance(way, ST_GeomFromText(%s,4326)) limit 1;",(row['way'],row['way']))
     row2 = cursor2.fetchone()
     if row2:
-        cursor2.execute('UPDATE planet_osm_line SET "addr:street" = %s WHERE "osm_id" = %s',(row2['name'],row['id']))
+        cursor3.execute('UPDATE planet_osm_line SET "addr:street" = %s WHERE "osm_id" = %s',(row2['name'],row['id']))
     row = cursor.fetchone()
 
 cursor.execute("select st_astext(way) as way, osm_id as id from planet_osm_polygon where \"addr:street\" IS NULL AND (\"addr:housenumber\" IS NOT NULL OR \"addr:housename\" IS NOT NULL)");
@@ -137,6 +274,73 @@ while row:
     cursor2.execute("SELECT name FROM planet_osm_roads WHERE ST_DWithin(way,ST_GeomFromText(%s,4326), 200) AND name != '' AND highway IN  ('residential','living_street','primary','secondary','tertiary','unclassified','road','service','pedestrian') ORDER BY ST_distance(way, ST_GeomFromText(%s,4326)) limit 1;",(row['way'],row['way']))
     row2 = cursor2.fetchone()
     if row2:
-        cursor2.execute('UPDATE planet_osm_polygon SET "addr:street" = %s WHERE "osm_id" = %s',(row2['name'],row['id']))
+        cursor3.execute('UPDATE planet_osm_polygon SET "addr:street" = %s WHERE "osm_id" = %s',(row2['name'],row['id']))
     row = cursor.fetchone()
 
+# Interpolationen von Adressdaten
+
+cursor.execute("select \"addr:interpolation\" as inter, st_astext(way) as street from planet_osm_line where \"addr:interpolation\" IS NOT NULL")
+interpolation = cursor.fetchone()
+while interpolation:
+    linepoints = ()
+    start = ()
+    coordinates = re.sub(r'[^0-9,. ]',"",interpolation["street"]).split(",")
+    for coordinate in coordinates:
+        print coordinate
+        cursor2.execute('SELECT "addr:housenumber" AS housenumber,"addr:postcode" AS postcode,"addr:street" AS street,"addr:city" AS city,"addr:suburb" AS suburb, st_astext(way) AS koord FROM planet_osm_point WHERE "addr:housenumber" IS NOT NULL AND way = st_pointfromtext(\'POINT('+str(coordinate)+')\',4326)')
+        print cursor2.query
+        point = cursor2.fetchone()
+        if(point):
+            # Wenn bereits Startwert festgelegt & Punkt wichtig
+            if((len(start)>0)and(is_inter_point(point['housenumber'],interpolation['inter']))):
+                # Punkt hinzufügen
+                linepoints.append(coordinate)
+                # Interpolieren
+                interpol(start,point,linepoints,interpolation['inter'])
+                # Neuen Startwert festlegen
+                start = point
+                # Liniencache leeren
+                linepoints = Array(coordinate)
+            elif((len(start)==0) and (is_inter_point(point['housenumber'],interpolation['inter']))):
+                # Startwert festlegen
+                start = point
+                # Liniencache leeren
+                linepoints = [coordinate]
+            else:
+                # unwichtiger Punkt
+                linepoints.append(coordinate)
+        else:
+            linepoints.append(coordinate)
+    interpolation = cursor.fetchone()
+
+#                        //Punktabfrage
+#                        $result2 = pg_query("select \"addr:housenumber\" as housenumber,\"addr:postcode\" as postcode,\"addr:street\" as street,\"addr:city\" as city,\"addr:suburb\" as suburb, st_astext(way) as koord from planet_osm_point where \"addr:housenumber\" IS NOT NULL AND way = st_pointfromtext('POINT(".$a.")',4326)");
+#                        if(pg_num_rows($result2)==1) {
+#                                $point = pg_fetch_assoc($result2);
+#                                //Wenn bereits Startwert festgelegt & Punkt wichtig
+#                                if((count($start)>0)&&(is_inter_point($point['housenumber'],$interpolation['inter']))) {
+#                                        //Punkt hinzufügen
+#                                        $linepoints[] = $a;
+#                                        //Interpolieren
+#                                        interpol($start,$point,$linepoints,$interpolation['inter']);
+#                                        // Neuen Startwert festlegen
+#                                        $start = $point;
+#                                        //Liniencache leeren
+#                                        $linepoints = array($a);
+#                                }
+#                                elseif((count($start)==0)&&(is_inter_point($point['housenumber'],$interpolation['inter']))) {
+#                                        //Startwert festlegen
+#                                        $start = $point;
+#                                        //Liniencache leeren
+#                                        $linepoints = array($a);
+#                                }
+#                                else { //unwichtiger Punkt
+#                                        $linepoints[] = $a;
+#                                }
+#                        }
+#                        else {
+#                                $linepoints[] = $a;
+#                        }
+#                }
+#        }
+#}
