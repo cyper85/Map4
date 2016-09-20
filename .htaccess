@@ -1,0 +1,22 @@
+# Deny access to install directory
+<Files install/*>
+    deny from all
+</Files>
+
+# Deny access to git directory
+<Files .git/*>
+    deny from all
+</Files>
+<Files .gitignore>
+    deny from all
+</Files>
+
+# Deny access to NetBeansProject-Directory
+<Files nbproject/*>
+    deny from all
+</Files>
+
+# Deny access to htaccess
+<Files .htaccess>
+    deny from all
+</Files>
