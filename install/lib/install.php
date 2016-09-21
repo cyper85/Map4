@@ -14,7 +14,7 @@
 $mysql->real_query("CREATE TEMPORARY TABLE `address_tmp` LIKE `address`");
 
 // Adressen einfügen
-function insert_adress($id, $row) {
+function insert_address($id, $row) {
     global $mysql;
     $address = array();
     
@@ -73,4 +73,87 @@ function insert_adress($id, $row) {
 
     $mysql->real_query("INSERT INTO `address_tmp` (" . implode(',', $keys) . ") VALUES (" . implode(',', $values) . ") ON DUPLICATE KEY UPDATE id = '" . $id . "'");
     return true;
+}
+
+function insert_coords($id, $geo, $mp, $debug = false) {
+    global $mysql;
+    $mysql->real_query("INSERT INTO `coords_tmp` (`id`,`geometrie`, `mittelpunkt`) VALUES('{$id}','{$geo}','{$mp}') ON DUPLICATE KEY UPDATE id = '{$id}'");
+}
+
+function insert_names($id, $row) {
+    $stmt = $conn->prepare("INSERT IGNORE INTO names (id, type, name) VALUES ('{$id}', ?, ?)");
+    $stmt->bind_param("ss", $type, $name);
+    
+    if(strlen($row['name'])>0) {
+        $type = "name";
+        $name = $row['name'];
+        $stmt->execute();
+    }
+    if(strlen($row['name:de'])>0) {
+        $type = "name:de";
+        $name = $row['name:de'];
+        $stmt->execute();
+    }
+    if(strlen($row['name:en'])>0) {
+        $type = "name:en";
+        $name = $row['name:en'];
+        $stmt->execute();
+    }
+    if(strlen($row['official_name'])>0) {
+        $type = "official_name";
+        $name = $row['official_name'];
+        $stmt->execute();
+    }
+    if(strlen($row['int_name'])>0) {
+        $type = "int_name";
+        $name = $row['int_name'];
+        $stmt->execute();
+    }
+    if(strlen($row['nat_name'])>0) {
+        $type = "nat_name";
+        $name = $row['nat_name'];
+        $stmt->execute();
+    }
+    if(strlen($row['reg_name'])>0) {
+        $type = "reg_name";
+        $name = $row['reg_name'];
+        $stmt->execute();
+    }
+    if(strlen($row['loc_name'])>0) {
+        $type = "loc_name";
+        $name = $row['loc_name'];
+        $stmt->execute();
+    }
+    if(strlen($row['alt_name'])>0) {
+        $type = "alt_name";
+        $name = $row['alt_name'];
+        $stmt->execute();
+    }
+    if(strlen($row['hist_name'])>0) {
+        $type = "hist_name";
+        $name = $row['hist_name'];
+        $stmt->execute();
+    }
+    if(strlen($row['old_name'])>0) {
+        $type = "old_name";
+        $name = $row['old_name'];
+        $stmt->execute();
+    }
+    if(strlen($row['name:historic'])>0) {
+        $type = "name:historic";
+        $name = $row['name:historic'];
+        $stmt->execute();
+    }
+    if(strlen($row['name:old'])>0) {
+        $type = "name:old";
+        $name = $row['name:old'];
+        $stmt->execute();
+    }
+    if(strlen($row['short_name'])>0) {
+        $type = "short_name";
+        $name = $row['short_name'];
+        $stmt->execute();
+    }
+    
+    $stmt->close();
 }
