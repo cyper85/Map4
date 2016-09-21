@@ -54,73 +54,63 @@ def generateBuildingPolygon(way_id,polygons):
 def is_inter_point(nr, inter):
     if((inter=='all') and re.match(r'^\d+$',nr)):
         return 1
-    elif((inter=='even') and re.match(r'^\d+$',nr) and (nr % 2 == 0)):
+    elif((inter=='even') and re.match(r'^\d+$',nr) and (int(nr) % 2 == 0)):
         return 1
-    elif((inter=='odd') and re.match(r'^\d+$',nr) and (nr % 2 == 1)):
+    elif((inter=='odd') and re.match(r'^\d+$',nr) and (int(nr) % 2 == 1)):
         return 1
     elif((inter=='alphabetic') and re.match(r'^\s*\d+\s*[a-zA-Z]\s*$',nr)):
         return 1
     else:
         return 0
 
+def insertPoints(line,start,end, double = False):
+    multiplikator = 1
+    if double :
+        multiplikator = 2
+    
+    anzahl = (int(end['housenumber']) - int(start['housenumber']))/multiplikator
+    
+    reverse = 1
+    if (anzahl < 0):
+        reverse = -1
+        anzahl = anzahl*reverse
+    anzahl1 = anzahl;
+    i=1
+    while anzahl>1:
+        
+        cursor3.execute("INSERT INTO planet_osm_point (\"addr:housenumber\", \"addr:street\", \"addr:suburb\", \"addr:city\", \"addr:postcode\", way) VALUES (%s,%s,%s,%s,%s,ST_Line_Interpolate_Point(st_linefromtext(%s,4326),%s))"
+            ,(str(int(start['housenumber'])+(i*multiplikator*reverse)), start['street'], start['suburb'], start['city'], start['postcode'], 'LINESTRING('+','.join(line)+')',str(i/anzahl1)))
+        i += 1
+        anzahl -= 1
+
 def interpol(start,end,line,intertype):
-    new = []
     if(intertype=='all'):
-	if(start['housenumber'] > end['housenumber']):
-            anzahl = start['housenumber'] - end['housenumber']
-            anzahl1 = anzahl
-            i=1;
-            for(anzahl;anzahl>1;anzahl--):
-		cursor3.execude("INSERT INTO planet_osm_point (\"addr:housenumber\", \"addr:street\", \"addr:suburb\", \"addr:city\", \"addr:postcode\", way) VALUES (%s,%s,%s,%s,%s,ST_Line_Interpolate_Point(st_linefromtext(%s,4326),%s)),"
-                    ,(str(start['housenumber']+i), start['street'], start['suburb'], start['city'], start['postcode'], 'LINESTRING('+','.join(line)+')',str($i/$anzahl1)))
-		i++
-        else:
-            anzahl = end['housenumber'] - start['housenumber'];
-            anzahl1 = anzahl;
-            i=1;
-            for(anzahl;anzahl>1;anzahl--):
-		cursor3.execude("INSERT INTO planet_osm_point (\"addr:housenumber\", \"addr:street\", \"addr:suburb\", \"addr:city\", \"addr:postcode\", way) VALUES (%s,%s,%s,%s,%s,ST_Line_Interpolate_Point(st_linefromtext(%s,4326),%s)),"
-                    ,(str(start['housenumber']+i), start['street'], start['suburb'], start['city'], start['postcode'], 'LINESTRING('+','.join(line)+')',str($i/$anzahl1)))
-		i++
-    elif((intertype=='even') or (intertype=='odd'))
-	if(start['housenumber']>end['housenumber'])
-            anzahl = (start['housenumber'] - end['housenumber'])/2;
-            anzahl1 = anzahl;
-            i=1;
-            for(anzahl;anzahl>1;anzahl--)
-		cursor3.execude("INSERT INTO planet_osm_point (\"addr:housenumber\", \"addr:street\", \"addr:suburb\", \"addr:city\", \"addr:postcode\", way) VALUES (%s,%s,%s,%s,%s,ST_Line_Interpolate_Point(st_linefromtext(%s,4326),%s)),"
-                    ,(str(start['housenumber']-(i*2)), start['street'], start['suburb'], start['city'], start['postcode'], 'LINESTRING('+','.join(line)+')',str($i/$anzahl1)))
-		i++
-	else
-            anzahl = (end['housenumber'] - start['housenumber'])/2;
-            anzahl1 = anzahl;
-            i=1;
-            for(anzahl;anzahl>1;anzahl--)
-		cursor3.execude("INSERT INTO planet_osm_point (\"addr:housenumber\", \"addr:street\", \"addr:suburb\", \"addr:city\", \"addr:postcode\", way) VALUES (%s,%s,%s,%s,%s,ST_Line_Interpolate_Point(st_linefromtext(%s,4326),%s)),"
-                    ,(str(start['housenumber']+(i*2)), start['street'], start['suburb'], start['city'], start['postcode'], 'LINESTRING('+','.join(line)+')',str($i/$anzahl1)))
-		i++
-                
-    elif(intertype=='alphabetic')
+        insertPoints(line,start,end, False)
+    elif((intertype=='even') or (intertype=='odd')):
+        insertPoints(line,start,end, True)
+    elif(intertype=='alphabetic'):
         number = re.findall(r'\d+',start['housenumber'])
-	if(number==re.findall(r'\d+',end['housenumber']))
-            end_char = re.findall(r'[a-z]+',lower(end['housenumber']))
-            start_char = re.findall(r'[a-z]+',lower(start['housenumber']))
-            if(len(start_char) === len(end_char) === 1)
-                anzahl = ord(end_char)-ord(start_char)
-                if(anzahl > 0)
+	if(number==re.findall(r'\d+',end['housenumber'])):
+            end_char = re.findall(r'[a-z]+',(end['housenumber']).lower())
+            start_char = re.findall(r'[a-z]+',(start['housenumber']).lower())
+            if(len(start_char) == len(end_char) == 1):
+                anzahl = ord(end_char[0])-ord(start_char[0])
+                if(anzahl > 0):
                     anzahl1 = anzahl;
                     i=1;
-                    for(anzahl;anzahl>1;anzahl--)
-                        cursor3.execude("INSERT INTO planet_osm_point (\"addr:housenumber\", \"addr:street\", \"addr:suburb\", \"addr:city\", \"addr:postcode\", way) VALUES (%s,%s,%s,%s,%s,ST_Line_Interpolate_Point(st_linefromtext(%s,4326),%s)),"
-                            ,(str(number)+chr(start_char-i)), start['street'], start['suburb'], start['city'], start['postcode'], 'LINESTRING('+','.join(line)+')',str($i/$anzahl1)))
-                        i++
-                elif(anzahl<0)
+                    while anzahl>1:
+                        cursor3.execute("INSERT INTO planet_osm_point (\"addr:housenumber\", \"addr:street\", \"addr:suburb\", \"addr:city\", \"addr:postcode\", way) VALUES (%s,%s,%s,%s,%s,ST_Line_Interpolate_Point(st_linefromtext(%s,4326),%s))",
+                        [(number[0]+chr(ord(start_char[0])-i)), start['street'], start['suburb'], start['city'], start['postcode'], 'LINESTRING('+','.join(line)+')',str(i/anzahl1)])
+                        i += 1
+                        anzahl -= 1
+                elif(anzahl<0):
                     anzahl1 = anzahl;
                     i=1;
-                    for(anzahl;anzahl>1;anzahl--)
-                        cursor3.execude("INSERT INTO planet_osm_point (\"addr:housenumber\", \"addr:street\", \"addr:suburb\", \"addr:city\", \"addr:postcode\", way) VALUES (%s,%s,%s,%s,%s,ST_Line_Interpolate_Point(st_linefromtext(%s,4326),%s)),"
-                            ,(str(number)+chr(start_char+i)), start['street'], start['suburb'], start['city'], start['postcode'], 'LINESTRING('+','.join(line)+')',str($i/$anzahl1)))
-                        i++
+                    while anzahl>1:
+                        cursor3.execute("INSERT INTO planet_osm_point (\"addr:housenumber\", \"addr:street\", \"addr:suburb\", \"addr:city\", \"addr:postcode\", way) VALUES (%s,%s,%s,%s,%s,ST_Line_Interpolate_Point(st_linefromtext(%s,4326),%s))",
+                        [(number[0]+chr(ord(start_char[0])+i)), start['street'], start['suburb'], start['city'], start['postcode'], 'LINESTRING('+','.join(line)+')',str(i/anzahl1)])
+                        i += 1
+                        anzahl -= 1
 
 cursor.execute("SELECT * FROM planet_osm_rels")
 
@@ -219,9 +209,9 @@ while interpolation:
     start = ()
     coordinates = re.sub(r'[^0-9,. ]',"",interpolation["street"]).split(",")
     for coordinate in coordinates:
-        print coordinate
+        #print str(coordinate)
         cursor2.execute('SELECT "addr:housenumber" AS housenumber,"addr:postcode" AS postcode,"addr:street" AS street,"addr:city" AS city,"addr:suburb" AS suburb, st_astext(way) AS koord FROM planet_osm_point WHERE "addr:housenumber" IS NOT NULL AND way = st_pointfromtext(\'POINT('+str(coordinate)+')\',4326)')
-        print cursor2.query
+        #print cursor2.query
         point = cursor2.fetchone()
         if(point):
             # Wenn bereits Startwert festgelegt & Punkt wichtig
@@ -233,7 +223,7 @@ while interpolation:
                 # Neuen Startwert festlegen
                 start = point
                 # Liniencache leeren
-                linepoints = Array(coordinate)
+                linepoints = [coordinate]
             elif((len(start)==0) and (is_inter_point(point['housenumber'],interpolation['inter']))):
                 # Startwert festlegen
                 start = point
